@@ -1,26 +1,33 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
+type application struct {
+	logger *slog.Logger
+}
+
 func main() {
-	mux := http.NewServeMux()
+	addr := flag.String("addr", ":4000", "HTTP network address")
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
-	fileServer := http.FileServer(http.Dir("./ui/static"))
+	app := &application{
+		logger: logger,
+	}
 
-	// {$} special character to prevent subtree path pattern(anything that end with trailing slash) aka catch all
-	mux.HandleFunc("GET /{$}", home)
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("GET /snippet/view/{id}", viewSnippet)
-	mux.HandleFunc("GET /snippet/create", createSnippetForm)
-	mux.HandleFunc("POST /snippet/create", createSnippet)
+	flag.Parse()
 
-	log.Print("Started on port 4000")
+	logger.Info("Starting server ", slog.Any("addr", *addr))
 
-	err := http.ListenAndServe(":4000", mux)
+	err := http.ListenAndServe(*addr, app.routes())
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 }
