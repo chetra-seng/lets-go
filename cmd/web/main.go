@@ -1,16 +1,18 @@
 package main
 
 import (
+	"chetraseng.com/internal/models"
+	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
 	"log/slog"
 	"net/http"
 	"os"
-	"database/sql"
-	_"github.com/go-sql-driver/mysql"
 )
 
 type application struct {
-	logger *slog.Logger
+	logger   *slog.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -20,13 +22,14 @@ func main() {
 		Level: slog.LevelDebug,
 	}))
 
-	app := &application{
-		logger: logger,
-	}
-
 	flag.Parse()
 
 	db, err := openDB(*dsn)
+
+	app := &application{
+		logger:   logger,
+		snippets: &models.SnippetModel{DB: db},
+	}
 
 	if err != nil {
 		logger.Error(err.Error())
