@@ -1,30 +1,41 @@
 package main
 
 import (
+	"chetraseng.com/internal/models"
+	"errors"
 	"fmt"
-	"html/template"
+	// "html/template"
 	"net/http"
 	"strconv"
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	files := []string{"./ui/html/base.tmpl.html", "./ui/html/pages/home.tmpl.html", "./ui/html/partials/nav.tmpl.html"}
 	w.Header().Add("server", "Go")
+	// files := []string{"./ui/html/base.tmpl.html", "./ui/html/pages/home.tmpl.html", "./ui/html/partials/nav.tmpl.html"}
+	//
+	// ts, err := template.ParseFiles(files...)
+	//
+	// if err != nil {
+	// 	app.serverError(w, r, err)
+	// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// }
 
-	ts, err := template.ParseFiles(files...)
+	// err = ts.ExecuteTemplate(w, "base", nil)
+
+	// if err != nil {
+	// 	app.serverError(w, r, err)
+	// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
+	// }
+
+	snippets, err := app.snippets.Latest()
 
 	if err != nil {
 		app.serverError(w, r, err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
-
-	err = ts.ExecuteTemplate(w, "base", nil)
-
-	if err != nil {
-		app.serverError(w, r, err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+	for _, s := range snippets {
+		fmt.Fprintf(w, "%+v\n", s)
 	}
-
 }
 
 func (app *application) createSnippetForm(w http.ResponseWriter, _ *http.Request) {
@@ -37,8 +48,20 @@ func (app *application) viewSnippet(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	msg := fmt.Sprintf("Hello from view %d", id)
-	w.Write([]byte(msg))
+
+	s, err := app.snippets.Get(id)
+
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			http.NotFound(w, r)
+		} else {
+			app.serverError(w, r, err)
+		}
+
+		return
+	}
+
+	fmt.Fprintf(w, "%+v", s)
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {

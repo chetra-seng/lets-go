@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -34,9 +35,55 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 }
 
 func (m *SnippetModel) Get(id int) (Snippet, error) {
-	return Snippet{}, nil
+	stmt := "SELECT id, title, content, created, expires from snippets where expires > UTC_TIMESTAMP() AND id = ?"
+	var s Snippet
+
+	err := m.DB.QueryRow(stmt, id).Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+
+	// No need to defer connect since it only contain a single row
+	// If it can't be read, then the connection will be close
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Snippet{}, ErrNoRecord
+		} else {
+			return Snippet{}, err
+		}
+	}
+
+	return s, nil
 }
 
 func (m *SnippetModel) Latest() ([]Snippet, error) {
-	return nil, nil
+	stmt := "SELECT id, title, content, created, expires from snippets where expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10"
+	var snippets []Snippet
+
+	rows, err := m.DB.Query(stmt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Defer connection close in case sometime goes wrong
+	// Because there are multiple rows, we can't tell which row will fail
+	defer rows.Close()
+
+	for rows.Next() {
+		var s Snippet
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+
+		if err != nil {
+			return nil, err
+		}
+
+		snippets = append(snippets, s)
+	}
+
+	// Check errors after the loop or look for any error when iterating
+	if err = rows.Err(); err != nil {
+    return nil, err
+	}
+
+	// No errors encountered
+	return snippets, nil
 }
