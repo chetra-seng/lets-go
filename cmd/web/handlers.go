@@ -3,11 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 
 	"chetraseng.com/internal/models"
 
-	// "html/template"
 	"net/http"
 	"strconv"
 )
@@ -26,21 +24,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		Snippets: snippets,
 	}
 
-	files := []string{"./ui/html/base.tmpl.html", "./ui/html/pages/home.tmpl.html", "./ui/html/partials/nav.tmpl.html"}
-
-	ts, err := template.ParseFiles(files...)
-
-	if err != nil {
-		app.serverError(w, r, err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-	}
-
-	err = ts.ExecuteTemplate(w, "base", tmplData)
-
-	if err != nil {
-		app.serverError(w, r, err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-	}
+	app.render(w, r, http.StatusOK, "home.tmpl.html", tmplData)
 
 }
 
@@ -71,19 +55,7 @@ func (app *application) viewSnippet(w http.ResponseWriter, r *http.Request) {
 		Snippet: s,
 	}
 
-	files := []string{"./ui/html/base.tmpl.html", "./ui/html/partials/nav.tmpl.html", "./ui/html/pages/view.tmpl.html"}
-
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, r, err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-	}
-
-	err = ts.ExecuteTemplate(w, "base", tmplData)
-	if err != nil {
-		app.serverError(w, r, err)
-	}
-
+	app.render(w, r, http.StatusOK, "view.tmpl.html", tmplData)
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
