@@ -11,7 +11,6 @@ import (
 )
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("server", "Go")
 
 	snippets, err := app.snippets.Latest()
 
