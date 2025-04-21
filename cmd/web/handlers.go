@@ -24,8 +24,9 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *application) createSnippetForm(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte("Hello from create form"))
+func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
+	data := app.newTemplateData(r)
+	app.render(w, r, 200, "create.tmpl.html", data)
 }
 
 func (app *application) viewSnippet(w http.ResponseWriter, r *http.Request) {
