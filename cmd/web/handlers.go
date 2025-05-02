@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strings"
-	"unicode/utf8"
 
 	"chetraseng.com/internal/models"
 	"chetraseng.com/internal/validator"
@@ -13,11 +11,14 @@ import (
 	"strconv"
 )
 
+// Map each fields to form field name for decoder
+// Form decoder needs to know these field names
+// Ingore struct with validator
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
-	validator.Validator
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -75,17 +76,15 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	var form snippetCreateForm
 
+	// Decode the form automatically from the request without having to do it manually
+	err = app.decodePostForm(r, &form)
+
+	// Incase of error in decoding
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
-	}
-
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
 	}
 
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field can not be blank")
