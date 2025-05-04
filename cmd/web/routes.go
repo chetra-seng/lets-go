@@ -13,12 +13,14 @@ func (app *application) routes() http.Handler {
 	// Dynamic middle for session
 	dynamic := alice.New(app.sessionManager.LoadAndSave)
 
+	protected := dynamic.Append(app.requiredAuthentication)
+
 	// {$} special character to prevent subtree path pattern(anything that end with trailing slash) aka catch all
 	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.viewSnippet))
-	mux.Handle("GET /snippet/create", dynamic.ThenFunc(app.createSnippetForm))
-	mux.Handle("POST /snippet/create", dynamic.ThenFunc(app.createSnippet))
+	mux.Handle("GET /snippet/create", protected.ThenFunc(app.createSnippetForm))
+	mux.Handle("POST /snippet/create", protected.ThenFunc(app.createSnippet))
 	mux.Handle("POST /user/signup", dynamic.ThenFunc(app.signupUser))
 	mux.Handle("GET /user/signup", dynamic.ThenFunc(app.signupForm))
 	mux.Handle("POST /user/login", dynamic.ThenFunc(app.loginUser))
