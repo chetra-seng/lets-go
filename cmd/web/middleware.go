@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 func commonHeaders(next http.Handler) http.Handler {
@@ -60,4 +62,15 @@ func (app *application) requiredAuthentication(next http.Handler) http.Handler {
 		w.Header().Add("Cache-Control", "no-store")
 		next.ServeHTTP(w, r)
 	})
+}
+
+func noSurf(next http.Handler) http.Handler {
+	csrfHanlder := nosurf.New(next)
+	csrfHanlder.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+	})
+
+  return csrfHanlder
 }
