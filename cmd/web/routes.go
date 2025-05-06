@@ -3,12 +3,12 @@ package main
 import (
 	"net/http"
 
+	"chetraseng.com/ui"
 	"github.com/justinas/alice"
 )
 
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/static"))
 
 	// Dynamic middle for session
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
@@ -17,7 +17,7 @@ func (app *application) routes() http.Handler {
 
 	// {$} special character to prevent subtree path pattern(anything that end with trailing slash) aka catch all
 	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
+	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
 	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.viewSnippet))
 	mux.Handle("GET /snippet/create", protected.ThenFunc(app.createSnippetForm))
 	mux.Handle("POST /snippet/create", protected.ThenFunc(app.createSnippet))
