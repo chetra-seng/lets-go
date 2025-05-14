@@ -15,6 +15,8 @@ func (app *application) routes() http.Handler {
 
 	protected := dynamic.Append(app.requiredAuthentication)
 
+	mux.HandleFunc("GET /ping", ping)
+
 	// {$} special character to prevent subtree path pattern(anything that end with trailing slash) aka catch all
 	mux.Handle("GET /{$}", dynamic.ThenFunc(app.home))
 	mux.Handle("GET /static/", http.FileServerFS(ui.Files))
